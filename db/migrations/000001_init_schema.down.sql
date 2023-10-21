@@ -1,0 +1,13 @@
+DROP EXTENSION IF EXISTS "uuid-ossp" DROP TABLE IF EXISTS "masters";
+
+DROP TABLE IF EXISTS "verification_codes";
+
+DROP TABLE IF EXISTS "invitations";
+
+DROP TABLE IF EXISTS "admins";
+
+DROP TABLE IF EXISTS "events";
+
+DROP TABLE IF EXISTS "users";
+
+DROP TABLE IF EXISTS "questions";
