@@ -18,14 +18,6 @@ var DB *gorm.DB
 
 func ConnectDB(config *config.Config) {
 	var err error
-	// dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", config.DBHost, config.DBUserName, config.DBUserPassword, config.DBName, config.DBPort)
-	dsn := config.DSN
-
-	// // Get the current working directory
-	// cwd, err := os.Getwd()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	// log gorm query
 	newLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
@@ -35,24 +27,13 @@ func ConnectDB(config *config.Config) {
 		Colorful:                  true,        // Disable color
 	})
 
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err = gorm.Open(postgres.Open(config.DSN), &gorm.Config{
 		Logger: newLogger,
 	})
 
 	if err != nil {
 		log.Fatal("Failed to connect to the Database")
 	}
-
-	// // migrate
-	// m, err := migrate.New("file://"+cwd+"/db/migrations", dsn)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// err = m.Up()
-	// if err != nil && err != migrate.ErrNoChange {
-	// 	log.Fatal(err.Error())
-	// }
 
 	fmt.Println("? Connected Successfully to the Database")
 }

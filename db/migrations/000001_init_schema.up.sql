@@ -5,7 +5,7 @@ CREATE TABLE
         "master_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
         "email" VARCHAR(50) UNIQUE,
         "password" VARCHAR(255) NOT NULL,
-        "verified" BOOLEAN DEFAULT false,
+        "verified" BOOLEAN NOT NULL DEFAULT false,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "masters_pkey" PRIMARY KEY("master_id")
@@ -15,12 +15,24 @@ CREATE TABLE
     IF NOT EXISTS "verification_codes" (
         "verification_code_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
         "master_id" UUID NOT NULL,
-        "totp_code" VARCHAR(255) NOT NULL,
+        "code" VARCHAR(255) NOT NULL,
         "expire_date" TIMESTAMP NOT NULL,
-        "used" BOOLEAN DEFAULT false,
+        "used" BOOLEAN NOT NULL DEFAULT false,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "verification_code_pkey" PRIMARY KEY ("verification_code_id"),
+        CONSTRAINT "verification_codes_pkey" PRIMARY KEY ("verification_code_id"),
+        CONSTRAINT "fk_master" FOREIGN KEY("master_id") REFERENCES "masters"("master_id") ON DELETE CASCADE
+    );
+
+CREATE TABLE
+    IF NOT EXISTS "master_otps"(
+        "master_otp_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
+        "master_id" UUID NOT NULL,
+        "code" VARCHAR(10) NOT NULL,
+        "expire_date" TIMESTAMP NOT NULL,
+        "used" BOOLEAN NOT NULL DEFAULT false,
+        "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "master_otps_pkey" PRIMARY KEY ("master_otp_id"),
         CONSTRAINT "fk_master" FOREIGN KEY("master_id") REFERENCES "masters"("master_id") ON DELETE CASCADE
     );
 
@@ -30,7 +42,7 @@ CREATE TABLE
         "master_id" UUID NOT NULL,
         "code" VARCHAR(255) NOT NULL,
         "expire_date" TIMESTAMP NOT NULL,
-        "used" BOOLEAN DEFAULT false,
+        "used" BOOLEAN NOT NULL DEFAULT false,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "invitations_pkey" PRIMARY KEY ("invitation_id"),
         CONSTRAINT "fk_master" FOREIGN KEY("master_id") REFERENCES "masters"("master_id") ON DELETE CASCADE
@@ -43,6 +55,7 @@ CREATE TABLE
         "username" varchar(50) NOT NULL,
         "email" varchar(50) UNIQUE,
         "password" varchar(255) NOT NULL,
+        "enable_2fa" BOOLEAN NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "admins_pkey" PRIMARY KEY ("admin_id"),
@@ -50,11 +63,24 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    IF NOT EXISTS "admin_otps"(
+        "admin_otp_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
+        "admin_id" UUID NOT NULL,
+        "code" VARCHAR(10) NOT NULL,
+        "expire_date" TIMESTAMP NOT NULL,
+        "used" BOOLEAN NOT NULL,
+        "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "admin_otps_pkey" PRIMARY KEY ("admin_otp_id"),
+        CONSTRAINT "fk_admin" FOREIGN KEY("admin_id") REFERENCES "admins"("admin_id") ON DELETE CASCADE
+    );
+
+CREATE TABLE
     IF NOT EXISTS "events" (
         "event_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
         "admin_id" UUID NOT NULL,
         "event_name" VARCHAR(50) NOT NULL,
-        "status" VARCHAR(50) NOT NULL DEFAULT "scheduled" "moderation" BOOLEAN DEFAULT false,
+        "status" VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+        "moderation" BOOLEAN,
         "max_questions" INTEGER NOT NULL DEFAULT 1,
         "max_question_length" INTEGER NOT NULL DEFAULT 160,
         "event_code" VARCHAR(50) NOT NULL,
@@ -80,9 +106,9 @@ CREATE TABLE
         "event_id" UUID NOT NULL,
         "user_id" UUID NOT NULL,
         "content" TEXT NOT NULL,
-        "starred" BOOLEAN DEFAULT false,
-        "approved" BOOLEAN DEFAULT false,
-        "answered" BOOLEAN DEFAULT false,
+        "starred" BOOLEAN,
+        "approved" BOOLEAN,
+        "answered" BOOLEAN,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "question_pkey" PRIMARY KEY ("question_id"),
