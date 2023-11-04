@@ -39,27 +39,30 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS "invitations" (
         "invitation_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
-        "master_id" UUID NOT NULL,
+        "master_id" UUID,
         "code" VARCHAR(255) NOT NULL,
         "expire_date" TIMESTAMP NOT NULL,
         "used" BOOLEAN NOT NULL DEFAULT false,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "invitations_pkey" PRIMARY KEY ("invitation_id"),
-        CONSTRAINT "fk_master" FOREIGN KEY("master_id") REFERENCES "masters"("master_id") ON DELETE CASCADE
+        CONSTRAINT "fk_master" FOREIGN KEY("master_id") REFERENCES "masters"("master_id") ON DELETE
+        SET NULL
     );
 
 CREATE TABLE
     IF NOT EXISTS "admins" (
         "admin_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
-        "invitation_id" UUID NOT NULL,
+        "invitation_id" UUID,
         "username" varchar(50) NOT NULL,
         "email" varchar(50) UNIQUE,
         "password" varchar(255) NOT NULL,
+        "admin_code" VARCHAR(50) UNIQUE,
         "enable_2fa" BOOLEAN NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "admins_pkey" PRIMARY KEY ("admin_id"),
-        CONSTRAINT "fk_invitation" FOREIGN KEY("invitation_id") REFERENCES "invitations"("invitation_id") ON DELETE CASCADE
+        CONSTRAINT "fk_invitation" FOREIGN KEY("invitation_id") REFERENCES "invitations"("invitation_id") ON DELETE
+        SET NULL
     );
 
 CREATE TABLE
@@ -79,16 +82,27 @@ CREATE TABLE
         "event_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
         "admin_id" UUID NOT NULL,
         "event_name" VARCHAR(50) NOT NULL,
-        "status" VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+        "status" VARCHAR(50) NOT NULL,
         "moderation" BOOLEAN,
-        "max_questions" INTEGER NOT NULL DEFAULT 1,
-        "max_question_length" INTEGER NOT NULL DEFAULT 160,
-        "event_code" VARCHAR(50) NOT NULL,
+        "max_questions" INTEGER NOT NULL,
+        "max_question_length" INTEGER NOT NULL,
+        "event_code" VARCHAR(50) UNIQUE,
         "start_date" TIMESTAMP NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "events_pkey" PRIMARY KEY ("event_id"),
-        CONSTRAINT "fk_admin" FOREIGN KEY("admin_id") REFERENCES "admins"("admin_id") ON DELETE CASCADE
+        CONSTRAINT "fk_admin" FOREIGN KEY("admin_id") REFERENCES "admins"("admin_id") ON DELETE CASCADE,
+        CONSTRAINT "valid_status" CHECK(
+            "status" IN(
+                'scheduled',
+                'live',
+                'finished'
+            )
+        ),
+        CONSTRAINT "valid_max_questions" CHECK("max_questions" IN(1, 3, 5)),
+        CONSTRAINT "valid_max_question_length" CHECK(
+            "max_question_length" IN(160, 240, 360, 540)
+        )
     );
 
 CREATE TABLE

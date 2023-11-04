@@ -7,10 +7,10 @@ import (
 )
 
 type Master struct {
-	MasterID  uuid.UUID
-	Email     string
-	Password  string
-	Verified  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	MasterID  uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()"`
+	Email     string    `gorm:"uniqueIndex;not null"`
+	Password  string    `gorm:"not null"`
+	Verified  bool      `gorm:"not null"`
+	CreatedAt time.Time `gorm:"not null"`
+	UpdatedAt time.Time `gorm:"not null"`
 }

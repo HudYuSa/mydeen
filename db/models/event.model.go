@@ -6,42 +6,42 @@ import (
 	"github.com/google/uuid"
 )
 
-type status string
+type Status string
 
 const (
-	Scheluded status = "scheduled"
-	Live      status = "live"
-	Finished  status = "finished"
+	Scheluded Status = "scheduled"
+	Live      Status = "live"
+	Finished  Status = "finished"
 )
 
-type questionLength int
+type QuestionLength int
 
 const (
-	Short    questionLength = 160
-	Medium   questionLength = 240
-	Long     questionLength = 360
-	VeryLong questionLength = 540
+	Short    QuestionLength = 160
+	Medium   QuestionLength = 240
+	Long     QuestionLength = 360
+	VeryLong QuestionLength = 540
 )
 
-type maxQuestions int
+type MaxQuestions int
 
 const (
-	LowCount  maxQuestions = 1
-	MidCount  maxQuestions = 3
-	HighCount maxQuestions = 5
+	LowCount  MaxQuestions = 1
+	MidCount  MaxQuestions = 3
+	HighCount MaxQuestions = 5
 )
 
 type Event struct {
-	EventID           uuid.UUID
-	AdminID           uuid.UUID
-	EventName         string
-	Status            string
-	Moderation        bool
-	MaxQuestions      int
-	MaxQuestionLength int
-	EventCode         string
-	StartDate         time.Time
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Admin             Admin `gorm:"foreignKey:AdminID"`
+	EventID           uuid.UUID      `gorm:"type:uuid;default:uuid_generate_v4()"`
+	AdminID           uuid.UUID      `gorm:"not null"`
+	EventName         string         `gorm:"not null"`
+	Status            Status         `gorm:"not null"`
+	Moderation        bool           `gorm:"not null"`
+	MaxQuestions      MaxQuestions   `gorm:"not null"`
+	MaxQuestionLength QuestionLength `gorm:"not null"`
+	EventCode         string         `gorm:"not null"`
+	StartDate         time.Time      `gorm:"not null"`
+	CreatedAt         time.Time      `gorm:"not null"`
+	UpdatedAt         time.Time      `gorm:"not null"`
+	Admin             Admin          `gorm:"foreignKey:AdminID;references:AdminID"`
 }

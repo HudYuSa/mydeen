@@ -7,11 +7,11 @@ import (
 )
 
 type AdminOtp struct {
-	AdminOtpID uuid.UUID
-	AdminID    uuid.UUID
-	Code       string
-	ExpireDate time.Time
-	Used       bool
-	CreatedAt  time.Time
-	Admin      Admin `gorm:"foreignKey:AdminID"`
+	AdminOtpID uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()"`
+	AdminID    uuid.UUID `gorm:"not null"`
+	Code       string    `gorm:"not null"`
+	ExpireDate time.Time `gorm:"not null"`
+	Used       bool      `gorm:"not null"`
+	CreatedAt  time.Time `gorm:"not null"`
+	Admin      Admin     `gorm:"foreignKey:AdminID;references:AdminID"`
 }

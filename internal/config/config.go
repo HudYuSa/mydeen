@@ -13,9 +13,13 @@ type Config struct {
 	DBName         string `mapstructure:"POSTGRES_DB"`
 	DBPort         string `mapstructure:"POSTGRES_PORT"`
 	ServerPort     string `mapstructure:"PORT"`
+	ServerUrl      string `mapstructure:"SERVER_URL"`
 	DSN            string `mapstructure:"DSN"`
 
-	ClientOrigin string `mapstructure:"CLIENT_ORIGIN"`
+	ClientOrigin      string `mapstructure:"CLIENT_ORIGIN"`
+	GoogleAppPassword string `mapstructure:"GOOGLE_APP_PASSWORD"`
+
+	DatabaseTimeout int `mapstructure:"DATABASE_TIMEOUT"`
 
 	AccessTokenPrivateKey  string        `mapstructure:"ACCESS_TOKEN_PRIVATE_KEY"`
 	AccessTokenPublicKey   string        `mapstructure:"ACCESS_TOKEN_PUBLIC_KEY"`

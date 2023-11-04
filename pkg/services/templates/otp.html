@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OTP Code Email</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        text-align: center;
+        background-color: #f2f2f2;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        padding: 20px 0;
+      }
+      .header img {
+        max-width: 150px;
+        display: block;
+        margin: 0 auto;
+      }
+      .content {
+        padding: 20px 0;
+      }
+      .content h1 {
+        color: #0073e6;
+        font-size: 24px;
+      }
+      .content p {
+        font-size: 16px;
+      }
+      .code {
+        font-size: 28px;
+        background-color: #f2f2f2;
+        padding: 10px;
+        border-radius: 5px;
+        display: inline-block;
+      }
+      .footer {
+        text-align: center;
+      }
+      .footer p {
+        font-size: 12px;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="content">
+        <h1>Your OTP Code</h1>
+        <p>Your OTP code is: <span class="code">{{.Code}}</span></p>
+        <p>This code will expire in {{.ExpireTime}} minutes.</p>
+      </div>
+      <div class="footer">
+        <p>This email was sent to you by mydeen.com.</p>
+      </div>
+    </div>
+  </body>
+</html>

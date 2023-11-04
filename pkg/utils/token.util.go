@@ -1,18 +1,20 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
+	"github.com/dchest/uniuri"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
 
 // private dan public tokennya adalah utf-8 yang di encode ke base64 saat akan membuat atau memvalidasi token maka tokennya di kembalikan ke utf-8 untuk masuk di func jwt.ParseRSAPrivateKeyFromPEM
-
-func CreateToken(ttl time.Duration, content interface{}, privateKey string) (string, error) {
+func CreateToken(ttl time.Duration, content any, privateKey string) (string, error) {
 	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
 		return "", fmt.Errorf("could not decode key: %w", err)
@@ -71,7 +73,7 @@ func ValidateToken(token string, publicKey string) (map[string]any, error) {
 	if !ok || !parsedToken.Valid {
 		return nil, fmt.Errorf("validate: invalid token")
 	}
-	fmt.Println(claims["sub"])
+	// fmt.Println(claims["sub"])
 	return claims["sub"].(map[string]any), nil
 }
 
@@ -87,7 +89,50 @@ func GetToken(ctx *gin.Context, cookieName string, headerName string) (token str
 		// if no header token check if there's cookie token
 		// if no error cookie token then
 		token = tokenCookie
+	} else {
+		token = ""
+	}
+	return
+}
+
+func GetCookie(ctx *gin.Context, cookieName string) (token string, err error) {
+	tokenCookie, err := ctx.Cookie(cookieName)
+
+	if err != nil {
+		return "", err
 	}
 
-	return
+	return tokenCookie, nil
+}
+
+// generateVerificationToken generates a unique verification token.
+func GenerateVerificationToken() (string, error) {
+	token := make([]byte, 32)
+	_, err := rand.Read(token)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(token), nil
+}
+
+// generateRandomCode generates a random 6-digit code.
+func GenerateRandomCode() string {
+	return uniuri.NewLen(6)
+}
+
+func GenerateRandomNumCode() (string, error) {
+	// Generate a random big integer in the range [0, 999999]
+	randomBigInt, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", err
+	}
+
+	// Format the random number as a 6-digit string with leading zeros
+	code := fmt.Sprintf("%06s", randomBigInt.String())
+
+	return code, nil
+}
+
+func GenerateRandomCodeLength(length int) string {
+	return uniuri.NewLen(length)
 }

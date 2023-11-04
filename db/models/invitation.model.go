@@ -7,11 +7,11 @@ import (
 )
 
 type Invitation struct {
-	InvitationID uuid.UUID
-	MasterID     uuid.UUID
-	Code         string
-	ExpireDate   time.Time
-	Used         bool
-	CreatedAt    time.Time
-	Master       Master `gorm:"foreignKey:MasterID"`
+	InvitationID uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()"`
+	MasterID     uuid.UUID `gorm:"not null"`
+	Code         string    `gorm:"not null"`
+	ExpireDate   time.Time `gorm:"not null"`
+	Used         bool      `gorm:"not null"`
+	CreatedAt    time.Time `gorm:"not null"`
+	Master       Master    `gorm:"foreignKey:MasterID;references:MasterID"`
 }
