@@ -188,7 +188,7 @@ func (ac *adminController) OtpCheck(ctx *gin.Context) {
 }
 
 func (ac *adminController) UpdateUsername(ctx *gin.Context) {
-	panic("not implemented") // TODO: Implement
+
 }
 
 func (ac *adminController) UpdateEmail(ctx *gin.Context) {

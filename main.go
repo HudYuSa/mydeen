@@ -8,6 +8,7 @@ import (
 	"github.com/HudYuSa/mydeen/internal/config"
 	"github.com/HudYuSa/mydeen/internal/connection"
 	"github.com/HudYuSa/mydeen/pkg/controllers"
+	"github.com/HudYuSa/mydeen/pkg/middlewares"
 	"github.com/HudYuSa/mydeen/pkg/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -33,20 +34,23 @@ func main() {
 	// // middleware
 	server.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{config.GlobalConfig.ClientOrigin, "http://localhost:5173"},
-		AllowMethods:     []string{"POST", "OPTIONS", "GET", "PUT", "PATCH"},
-		AllowHeaders:     []string{"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", " Authorization", " accept", "origin", "Cache-Control", " X-Requested-With", "ngrok-skip-browser-warning"},
+		AllowMethods:     []string{"POST", "OPTIONS", "GET", "PUT", "PATCH", "DELETE"},
+		AllowHeaders:     []string{"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", " accept", "origin", "Cache-Control", " X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour}))
+		MaxAge:           600}))
 
 	router := server.Group("/api")
 	router.GET("/test", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "welcome to this project"})
 	})
 
-	// v1 := router.Group("/v1")
+	// middleware
+	router.Use(middlewares.DBTimeoutMiddleware(time.Duration(config.GlobalConfig.DatabaseTimeout) * time.Millisecond))
 
+	// controller
 	controllers.InitializeControllers()
+	// routes
 	routes.InitializeRoutes(router)
 
 	// run app

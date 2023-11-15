@@ -111,7 +111,7 @@ func (ec *eventController) GetEvent(ctx *gin.Context) {
 	if eventResult.Error != nil {
 		switch eventResult.Error.Error() {
 		case "record not found":
-			dtos.RespondWithError(ctx, http.StatusNotFound, "there is no event with the given id")
+			dtos.RespondWithError(ctx, http.StatusNotFound, "there is no event with the given code")
 		default:
 			dtos.RespondWithError(ctx, http.StatusInternalServerError, eventResult.Error.Error())
 		}
@@ -164,6 +164,7 @@ func (ec *eventController) GetScheduledAdminEvents(ctx *gin.Context) {
 		eventsResponse = append(eventsResponse, *dtos.GenerateEventResponse(&event))
 	}
 
+	fmt.Println(eventsResponse)
 	dtos.RespondWithJson(ctx, http.StatusOK, eventsResponse)
 }
 
@@ -186,6 +187,7 @@ func (ec *eventController) GetFinishedAdminEvents(ctx *gin.Context) {
 	for _, event := range events {
 		eventsResponse = append(eventsResponse, *dtos.GenerateEventResponse(&event))
 	}
+	fmt.Println(eventsResponse)
 
 	dtos.RespondWithJson(ctx, http.StatusOK, eventsResponse)
 }
@@ -204,26 +206,29 @@ func (ec *eventController) GetLiveEvent(ctx *gin.Context) {
 		case "record not found":
 			dtos.RespondWithError(ctx, http.StatusNotFound, "there is no admin with the given id")
 		default:
-			dtos.RespondWithError(ctx, http.StatusBadGateway, adminResult.Error.Error())
+			dtos.RespondWithError(ctx, http.StatusInternalServerError, adminResult.Error.Error())
 		}
 		return
 	}
 
 	// cari event dari adminnya yang sedang live
-	event := models.Event{}
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ? AND status = ?", admin.AdminID, models.Live).First(&event)
+	events := []models.Event{}
+	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ? AND status = ?", admin.AdminID, models.Live).Find(&events)
 	if eventResult.Error != nil {
-		switch eventResult.Error.Error() {
-		case "record not found":
-			dtos.RespondWithError(ctx, http.StatusNotFound, "There is currently no live event")
-		default:
-			dtos.RespondWithError(ctx, http.StatusBadGateway, eventResult.Error.Error())
-		}
+		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventResult.Error.Error())
 		return
 	}
 
+	eventsResponse := []dtos.EventResponse{}
+
+	fmt.Println(eventsResponse)
+
+	for _, event := range events {
+		eventsResponse = append(eventsResponse, *dtos.GenerateEventResponse(&event))
+	}
+
 	// kirim response
-	dtos.RespondWithJson(ctx, http.StatusOK, dtos.GenerateEventResponse(&event))
+	dtos.RespondWithJson(ctx, http.StatusOK, eventsResponse)
 }
 
 func (ec *eventController) UpdateEvent(ctx *gin.Context) {
@@ -325,6 +330,7 @@ func (ec *eventController) FinishEvent(ctx *gin.Context) {
 		return
 	}
 
+	fmt.Println(event.Status)
 	// check if event status
 	if event.Status == models.Finished {
 		dtos.RespondWithError(ctx, http.StatusBadRequest, "Your event already finished")
@@ -405,7 +411,6 @@ func (ec *eventController) UpdateModeration(ctx *gin.Context) {
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateModerationInput
 
-	// try to bind the request body to the payload struct
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
 		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -417,7 +422,7 @@ func (ec *eventController) UpdateModeration(ctx *gin.Context) {
 		return
 	}
 
-	dtos.RespondWithJson(ctx, http.StatusOK, "Successfully update event name")
+	dtos.RespondWithJson(ctx, http.StatusOK, "Successfully update event moderation")
 }
 
 func (ec *eventController) UpdateMaxQuestionLength(ctx *gin.Context) {

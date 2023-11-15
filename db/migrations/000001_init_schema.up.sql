@@ -101,7 +101,7 @@ CREATE TABLE
         ),
         CONSTRAINT "valid_max_questions" CHECK("max_questions" IN(1, 3, 5)),
         CONSTRAINT "valid_max_question_length" CHECK(
-            "max_question_length" IN(160, 240, 360, 540)
+            "max_question_length" IN(160, 240, 360, 480)
         )
     );
 

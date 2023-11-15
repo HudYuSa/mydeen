@@ -12,7 +12,7 @@ type EventResponse struct {
 	AdminId           *uuid.UUID            `json:"admin_id,omitempty"`
 	EventName         string                `json:"event_name,omitempty"`
 	Status            models.Status         `json:"status,omitempty"`
-	Moderation        bool                  `json:"moderation,omitempty"`
+	Moderation        bool                  `json:"moderation"`
 	MaxQuestions      models.MaxQuestions   `json:"max_questions,omitempty"`
 	MaxQuestionLength models.QuestionLength `json:"max_question_length,omitempty"`
 	EventCode         string                `json:"event_code,omitempty"`
@@ -36,7 +36,7 @@ type UpdateEventDateInput struct {
 }
 
 type UpdateModerationInput struct {
-	Moderation bool `json:"moderation" binding:"required"`
+	Moderation bool `json:"moderation"`
 }
 
 type UpdateMaxQuestionLengthInput struct {

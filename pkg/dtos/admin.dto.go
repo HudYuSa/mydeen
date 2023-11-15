@@ -14,7 +14,7 @@ type AdminResponse struct {
 	Email        string     `json:"email,omitempty"`
 	AdminCode    string     `json:"admin_code,omitempty"`
 	Type         string     `json:"type,omitempty"`
-	Enable2fa    bool       `json:"enable2fa,omitempty"`
+	Enable2fa    bool       `json:"enable2fa"`
 	CreatedAt    *time.Time `json:"created_at,omitempty"`
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
@@ -33,6 +33,14 @@ type AdminSignInInput struct {
 
 type AdminOtpInput struct {
 	Code string `json:"code" binding:"required"`
+}
+
+type UpdateAdminUsername struct {
+	Username string `json:"username" binding:"required"`
+}
+
+type UpdateAdminEmail struct {
+	Email string `json:"username" binding:"required"`
 }
 
 func GenerateAdminResponse(admin *models.Admin) *AdminResponse {

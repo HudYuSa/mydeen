@@ -20,7 +20,7 @@ const (
 	Short    QuestionLength = 160
 	Medium   QuestionLength = 240
 	Long     QuestionLength = 360
-	VeryLong QuestionLength = 540
+	VeryLong QuestionLength = 480
 )
 
 type MaxQuestions int
