@@ -35,7 +35,7 @@ func AuthenticateMaster() gin.HandlerFunc {
 			var master models.Master
 			masterResult := connection.DB.First(&master, "master_id = ?", masterId)
 			if masterResult.Error != nil {
-				dtos.RespondWithError(ctx, http.StatusInternalServerError, masterResult.Error.Error())
+				dtos.RespondWithError(ctx, http.StatusInternalServerError, "you're not allowed to access this endpoint")
 				return
 			}
 

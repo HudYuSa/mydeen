@@ -120,6 +120,10 @@ func GenerateRandomCode() string {
 	return uniuri.NewLen(6)
 }
 
+func GenerateRandomCodeLength(length int) string {
+	return uniuri.NewLen(length)
+}
+
 func GenerateRandomNumCode() (string, error) {
 	// Generate a random big integer in the range [0, 999999]
 	randomBigInt, err := rand.Int(rand.Reader, big.NewInt(1000000))
@@ -133,6 +137,18 @@ func GenerateRandomNumCode() (string, error) {
 	return code, nil
 }
 
-func GenerateRandomCodeLength(length int) string {
-	return uniuri.NewLen(length)
+func GenerateRandomNumCodeLength(l int64) (string, error) {
+	base := big.NewInt(10)
+	exponent := big.NewInt(l)
+
+	result := new(big.Int).Exp(base, exponent, nil)
+	randomBigInt, err := rand.Int(rand.Reader, result)
+	if err != nil {
+		return "", err
+	}
+
+	// Format the random number as a 6-digit string with leading zeros
+	code := fmt.Sprintf("%06s", randomBigInt.String())
+
+	return code, nil
 }

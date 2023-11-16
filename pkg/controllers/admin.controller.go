@@ -78,7 +78,7 @@ func (ac *adminController) SignUp(ctx *gin.Context) {
 
 	// create admin entity
 	now := time.Now()
-	randomCode, err := utils.GenerateRandomNumCode()
+	randomCode, err := utils.GenerateRandomNumCodeLength(12)
 	if err != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, err.Error())
 	}

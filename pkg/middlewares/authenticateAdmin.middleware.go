@@ -34,7 +34,7 @@ func AuthenticateAdmin() gin.HandlerFunc {
 			var admin models.Admin
 			adminResult := connection.DB.First(&admin, "admin_id = ?", adminId)
 			if adminResult.Error != nil {
-				dtos.RespondWithError(ctx, http.StatusInternalServerError, adminResult.Error.Error())
+				dtos.RespondWithError(ctx, http.StatusInternalServerError, "you're not allowed to access this endpoint")
 			}
 
 			ctx.Set("currentAdmin", admin)
