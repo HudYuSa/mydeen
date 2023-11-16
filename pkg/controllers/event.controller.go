@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/HudYuSa/mydeen/db/models"
-	"github.com/HudYuSa/mydeen/internal/config"
 	"github.com/HudYuSa/mydeen/pkg/dtos"
 	"github.com/HudYuSa/mydeen/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -44,8 +43,7 @@ func NewEventController(db *gorm.DB) EventController {
 }
 
 func (ec *eventController) CreateEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
 
@@ -87,7 +85,7 @@ func (ec *eventController) CreateEvent(ctx *gin.Context) {
 	}
 
 	// save to database
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Create(&newEvent)
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Create(&newEvent)
 	if eventResult.Error != nil && strings.Contains(eventResult.Error.Error(), "duplicate key value violates unique") {
 		dtos.RespondWithError(ctx, http.StatusConflict, "Duplicate event code")
 		return
@@ -101,13 +99,12 @@ func (ec *eventController) CreateEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) GetEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventCode := ctx.Param("event_code")
 
 	event := models.Event{}
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_code = ?", eventCode).First(&event)
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_code = ?", eventCode).First(&event)
 	if eventResult.Error != nil {
 		switch eventResult.Error.Error() {
 		case "record not found":
@@ -122,14 +119,13 @@ func (ec *eventController) GetEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) GetAdminEvents(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
 
 	// get events based on admin id
 	events := []models.Event{}
-	eventsResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ?", currentAdmin.AdminID).Order("created_at DESC").Find(&events)
+	eventsResult := ec.DB.WithContext(dbTimeoutCtx).Where("admin_id = ?", currentAdmin.AdminID).Order("created_at DESC").Find(&events)
 	if eventsResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventsResult.Error.Error())
 		return
@@ -145,14 +141,13 @@ func (ec *eventController) GetAdminEvents(ctx *gin.Context) {
 }
 
 func (ec *eventController) GetScheduledAdminEvents(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
 
 	// get events based on admin id
 	events := []models.Event{}
-	eventsResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ? AND status = ?", currentAdmin.AdminID, models.Scheluded).Order("created_at DESC").Find(&events)
+	eventsResult := ec.DB.WithContext(dbTimeoutCtx).Where("admin_id = ? AND status = ?", currentAdmin.AdminID, models.Scheluded).Order("created_at DESC").Find(&events)
 	if eventsResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventsResult.Error.Error())
 		return
@@ -169,14 +164,13 @@ func (ec *eventController) GetScheduledAdminEvents(ctx *gin.Context) {
 }
 
 func (ec *eventController) GetFinishedAdminEvents(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
 
 	// get events based on admin id
 	events := []models.Event{}
-	eventsResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ? AND status = ?", currentAdmin.AdminID, models.Finished).Order("created_at DESC").Find(&events)
+	eventsResult := ec.DB.WithContext(dbTimeoutCtx).Where("admin_id = ? AND status = ?", currentAdmin.AdminID, models.Finished).Order("created_at DESC").Find(&events)
 	if eventsResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventsResult.Error.Error())
 		return
@@ -193,14 +187,13 @@ func (ec *eventController) GetFinishedAdminEvents(ctx *gin.Context) {
 }
 
 func (ec *eventController) GetLiveEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	adminCode := ctx.Param("admin_code")
 
 	// cari admin berdasarkan admin codenya di database
 	admin := models.Admin{}
-	adminResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_code = ?", adminCode).First(&admin)
+	adminResult := ec.DB.WithContext(dbTimeoutCtx).Where("admin_code = ?", adminCode).First(&admin)
 	if adminResult.Error != nil {
 		switch adminResult.Error.Error() {
 		case "record not found":
@@ -213,7 +206,7 @@ func (ec *eventController) GetLiveEvent(ctx *gin.Context) {
 
 	// cari event dari adminnya yang sedang live
 	events := []models.Event{}
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("admin_id = ? AND status = ?", admin.AdminID, models.Live).Find(&events)
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Where("admin_id = ? AND status = ?", admin.AdminID, models.Live).Find(&events)
 	if eventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventResult.Error.Error())
 		return
@@ -236,12 +229,11 @@ func (ec *eventController) UpdateEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) DeleteEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_id = ?", eventId).Delete(&models.Event{})
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_id = ?", eventId).Delete(&models.Event{})
 	if eventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, eventResult.Error.Error())
 		return
@@ -257,14 +249,13 @@ func (ec *eventController) DeleteEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) StartEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 
 	// check for another live events
 	checkEvents := []models.Event{}
-	checkEventsResult := ec.DB.WithContext(requestTimeoutCtx).Where("status = ?", models.Live).Find(&checkEvents)
+	checkEventsResult := ec.DB.WithContext(dbTimeoutCtx).Where("status = ?", models.Live).Find(&checkEvents)
 	if checkEventsResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, checkEventsResult.Error.Error())
 		return
@@ -279,7 +270,7 @@ func (ec *eventController) StartEvent(ctx *gin.Context) {
 
 	// get event by event_id
 	event := models.Event{}
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_id = ?", eventId).First(&event)
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_id = ?", eventId).First(&event)
 	if eventResult.Error != nil {
 		switch eventResult.Error.Error() {
 		case "record not found":
@@ -302,7 +293,7 @@ func (ec *eventController) StartEvent(ctx *gin.Context) {
 	// update the status
 	event.Status = models.Live
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_id = ?", event.EventID).Save(&event)
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_id = ?", event.EventID).Save(&event)
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -312,14 +303,13 @@ func (ec *eventController) StartEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) FinishEvent(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 
 	event := models.Event{}
 
-	eventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_id = ?", eventId).First(&event)
+	eventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_id = ?", eventId).First(&event)
 	if eventResult.Error != nil {
 		switch eventResult.Error.Error() {
 		case "record not found":
@@ -343,8 +333,8 @@ func (ec *eventController) FinishEvent(ctx *gin.Context) {
 	// update the status
 	event.Status = models.Finished
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Where("event_id = ?", event.EventID).Save(&event)
-	// UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ? AND status = ?", eventId, models.Live).Update("status", models.Finished)
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Where("event_id = ?", event.EventID).Save(&event)
+	// UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ? AND status = ?", eventId, models.Live).Update("status", models.Finished)
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -354,8 +344,7 @@ func (ec *eventController) FinishEvent(ctx *gin.Context) {
 }
 
 func (ec *eventController) UpdateEventName(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateEventNameInput
@@ -368,7 +357,7 @@ func (ec *eventController) UpdateEventName(ctx *gin.Context) {
 
 	fmt.Println(payload)
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("event_name", payload.EventName)
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("event_name", payload.EventName)
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -378,8 +367,7 @@ func (ec *eventController) UpdateEventName(ctx *gin.Context) {
 }
 
 func (ec *eventController) UpdateDate(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateEventDateInput
@@ -395,7 +383,7 @@ func (ec *eventController) UpdateDate(ctx *gin.Context) {
 		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
 	}
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("start_date", date)
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("start_date", date)
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -405,8 +393,7 @@ func (ec *eventController) UpdateDate(ctx *gin.Context) {
 }
 
 func (ec *eventController) UpdateModeration(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateModerationInput
@@ -416,7 +403,7 @@ func (ec *eventController) UpdateModeration(ctx *gin.Context) {
 		return
 	}
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("moderation", payload.Moderation)
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("moderation", payload.Moderation)
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -426,8 +413,7 @@ func (ec *eventController) UpdateModeration(ctx *gin.Context) {
 }
 
 func (ec *eventController) UpdateMaxQuestionLength(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateMaxQuestionLengthInput
@@ -438,7 +424,7 @@ func (ec *eventController) UpdateMaxQuestionLength(ctx *gin.Context) {
 		return
 	}
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("max_question_length", models.QuestionLength(payload.MaxQuestionLength))
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("max_question_length", models.QuestionLength(payload.MaxQuestionLength))
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return
@@ -448,8 +434,7 @@ func (ec *eventController) UpdateMaxQuestionLength(ctx *gin.Context) {
 }
 
 func (ec *eventController) UpdateMaxQuestions(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	eventId := ctx.Param("event_id")
 	var payload dtos.UpdateMaxQuestions
@@ -460,7 +445,7 @@ func (ec *eventController) UpdateMaxQuestions(ctx *gin.Context) {
 		return
 	}
 
-	UpdateEventResult := ec.DB.WithContext(requestTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("max_questions", models.MaxQuestions(payload.MaxQuestions))
+	UpdateEventResult := ec.DB.WithContext(dbTimeoutCtx).Model(&models.Event{}).Where("event_id = ?", eventId).Update("max_questions", models.MaxQuestions(payload.MaxQuestions))
 	if UpdateEventResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateEventResult.Error.Error())
 		return

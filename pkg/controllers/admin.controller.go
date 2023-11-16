@@ -39,10 +39,9 @@ func NewAdminController(db *gorm.DB) AdminController {
 }
 
 func (ac *adminController) SignUp(ctx *gin.Context) {
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	var payload dtos.AdminSignUpInput
-	// timeout
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
 
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
 		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
@@ -59,7 +58,7 @@ func (ac *adminController) SignUp(ctx *gin.Context) {
 
 	// find invitation in database using payload.invitationCode
 	invitation := models.Invitation{}
-	invitationResult := ac.DB.WithContext(requestTimeoutCtx).Where("code = ? AND used = ?", payload.InvitationCode, false).First(&invitation)
+	invitationResult := ac.DB.WithContext(dbTimeoutCtx).Where("code = ? AND used = ?", payload.InvitationCode, false).First(&invitation)
 	// if there's an error when fetching from db
 	if invitationResult.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusForbidden, "Cannot found your invitation code")
@@ -98,7 +97,7 @@ func (ac *adminController) SignUp(ctx *gin.Context) {
 	}
 
 	// save new admin to database
-	adminResult := ac.DB.WithContext(requestTimeoutCtx).Create(&newAdmin)
+	adminResult := ac.DB.WithContext(dbTimeoutCtx).Create(&newAdmin)
 	// handle any possible error
 	if adminResult.Error != nil && strings.Contains(adminResult.Error.Error(), "duplicate key value violates unique") {
 		dtos.RespondWithError(ctx, http.StatusConflict, "Admin with that email already exist")
@@ -109,7 +108,7 @@ func (ac *adminController) SignUp(ctx *gin.Context) {
 	}
 
 	// update the otp as used in database
-	invitationUpdateResult := ac.DB.WithContext(requestTimeoutCtx).Model(&models.Invitation{}).Where("invitation_id = ?", invitation.InvitationID).Update("used", true)
+	invitationUpdateResult := ac.DB.WithContext(dbTimeoutCtx).Model(&models.Invitation{}).Where("invitation_id = ?", invitation.InvitationID).Update("used", true)
 	if invitationUpdateResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, invitationUpdateResult.Error.Error())
 		return
@@ -122,12 +121,10 @@ func (ac *adminController) SignUp(ctx *gin.Context) {
 }
 
 func (ac *adminController) SignIn(ctx *gin.Context) {
-	var payload dtos.AdminSignInInput
-	// timeout
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	// try to bind the request body to the payload struct
+	var payload dtos.AdminSignInInput
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
 		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -136,7 +133,7 @@ func (ac *adminController) SignIn(ctx *gin.Context) {
 	fmt.Println(payload, "admin sign in payload")
 	// find the admin in database
 	admin := models.Admin{}
-	adminResult := ac.DB.WithContext(requestTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).First(&admin)
+	adminResult := ac.DB.WithContext(dbTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).First(&admin)
 	// if there's an error when fetching from db
 	if adminResult.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusForbidden, "Invalid Email or password")
@@ -200,12 +197,10 @@ func (ac *adminController) UpdatePassword(ctx *gin.Context) {
 }
 
 func (ac *adminController) RefreshAccessToken(ctx *gin.Context) {
-	refreshToken := utils.GetToken(ctx, "refresh_token", "x-refresh-token")
-	// timeout
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	// if there's no token from header or cookie
+	refreshToken := utils.GetToken(ctx, "refresh_token", "x-refresh-token")
 	if reflect.ValueOf(refreshToken).IsZero() {
 		dtos.RespondWithError(ctx, http.StatusUnauthorized, "you're not allowed to access this endpoint")
 		return
@@ -220,7 +215,7 @@ func (ac *adminController) RefreshAccessToken(ctx *gin.Context) {
 
 	// find the user that has the refresh token
 	var admin models.Admin
-	result := ac.DB.WithContext(requestTimeoutCtx).Where("admin_id = ?", sub["admin_id"]).First(&admin)
+	result := ac.DB.WithContext(dbTimeoutCtx).Where("admin_id = ?", sub["admin_id"]).First(&admin)
 	fmt.Println(sub["admin_id"])
 	if result.Error != nil {
 		switch result.Error.Error() {
@@ -267,9 +262,6 @@ func (ac *adminController) LogOut(ctx *gin.Context) {
 }
 
 func (ac *adminController) Profile(ctx *gin.Context) {
-	if currentAdmin, ok := ctx.MustGet("currentUser").(models.Admin); ok {
-		dtos.RespondWithJson(ctx, http.StatusOK, dtos.GenerateAdminResponse(&currentAdmin))
-	} else {
-		dtos.RespondWithError(ctx, http.StatusUnauthorized, "you're not allowed to access this endpoint")
-	}
+	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
+	dtos.RespondWithJson(ctx, http.StatusOK, dtos.GenerateAdminResponse(&currentAdmin))
 }

@@ -81,7 +81,7 @@ CREATE TABLE
     IF NOT EXISTS "events" (
         "event_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
         "admin_id" UUID NOT NULL,
-        "event_name" VARCHAR(50) NOT NULL,
+        "event_name" VARCHAR(250) NOT NULL,
         "status" VARCHAR(50) NOT NULL,
         "moderation" BOOLEAN,
         "max_questions" INTEGER NOT NULL,

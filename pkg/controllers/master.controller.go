@@ -38,8 +38,8 @@ func NewMasterController(db *gorm.DB) MasterController {
 }
 
 func (mc *masterController) SignUp(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	var payload dtos.MasterSignUpInput
 
 	// try to bind the request body to the payload struct
@@ -57,7 +57,7 @@ func (mc *masterController) SignUp(ctx *gin.Context) {
 
 	// check duplicate master account that haven't been verified
 	master := models.Master{}
-	masterGetResult := mc.DB.WithContext(requestTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).Find(&master)
+	masterGetResult := mc.DB.WithContext(dbTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).Find(&master)
 	// check for any possible error
 	if masterGetResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, masterGetResult.Error.Error())
@@ -86,7 +86,7 @@ func (mc *masterController) SignUp(ctx *gin.Context) {
 	}
 
 	// save the data to database using gorm
-	masterResult := mc.DB.WithContext(requestTimeoutCtx).Create(&newMaster)
+	masterResult := mc.DB.WithContext(dbTimeoutCtx).Create(&newMaster)
 	// check for any possible error
 	if masterResult.Error != nil && strings.Contains(masterResult.Error.Error(), "duplicate key value violates unique") {
 		dtos.RespondWithError(ctx, http.StatusConflict, "Master with that email already exist")
@@ -115,7 +115,7 @@ func (mc *masterController) SignUp(ctx *gin.Context) {
 	}
 
 	// store the verification code in database
-	vcResult := mc.DB.WithContext(requestTimeoutCtx).Create(&verificationCode)
+	vcResult := mc.DB.WithContext(dbTimeoutCtx).Create(&verificationCode)
 	// check for any possible error
 	if vcResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, vcResult.Error.Error())
@@ -136,8 +136,8 @@ func (mc *masterController) SignUp(ctx *gin.Context) {
 }
 
 func (mc *masterController) SignIn(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	var payload dtos.MasterSignInInput
 
 	// try to bind the request body to the payload struct
@@ -149,7 +149,7 @@ func (mc *masterController) SignIn(ctx *gin.Context) {
 	fmt.Println(payload)
 	// find the master in database
 	master := models.Master{}
-	result := mc.DB.WithContext(requestTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).First(&master)
+	result := mc.DB.WithContext(dbTimeoutCtx).Where("email = ?", strings.ToLower(payload.Email)).First(&master)
 	// if there's an error when fetching from db
 	if result.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusForbidden, "Invalid Email or password")
@@ -183,7 +183,7 @@ func (mc *masterController) SignIn(ctx *gin.Context) {
 	}
 
 	// save the otp code to database
-	otpResult := mc.DB.WithContext(requestTimeoutCtx).Create(&otp)
+	otpResult := mc.DB.WithContext(dbTimeoutCtx).Create(&otp)
 	if otpResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, otpResult.Error.Error())
 		return
@@ -202,8 +202,8 @@ func (mc *masterController) SignIn(ctx *gin.Context) {
 }
 
 func (mc *masterController) OtpCheck(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	var payload dtos.MasterOtpInput
 
 	// try to bind the request body to the payload struct
@@ -214,7 +214,7 @@ func (mc *masterController) OtpCheck(ctx *gin.Context) {
 
 	// get the otp from database
 	otp := models.MasterOtp{}
-	otpResult := mc.DB.WithContext(requestTimeoutCtx).Where("code = ? AND used = ?", payload.Code, false).First(&otp)
+	otpResult := mc.DB.WithContext(dbTimeoutCtx).Where("code = ? AND used = ?", payload.Code, false).First(&otp)
 	if otpResult.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusForbidden, "Invalid otp code")
 		return
@@ -233,7 +233,7 @@ func (mc *masterController) OtpCheck(ctx *gin.Context) {
 
 	// find master of the otp
 	master := models.Master{}
-	masterResult := mc.DB.WithContext(requestTimeoutCtx).Where("master_id = ?", otp.MasterID).First(&master)
+	masterResult := mc.DB.WithContext(dbTimeoutCtx).Where("master_id = ?", otp.MasterID).First(&master)
 	if masterResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, masterResult.Error.Error())
 		return
@@ -268,7 +268,7 @@ func (mc *masterController) OtpCheck(ctx *gin.Context) {
 	ctx.SetCookie("refresh_token", refreshToken, config.GlobalConfig.RefreshTokenMaxAge*60, "/", domain, true, true)
 
 	// update the otp as used in database
-	otpUpdateResult := mc.DB.WithContext(requestTimeoutCtx).Model(&models.MasterOtp{}).Where("master_otp_id = ?", otp.MasterOtpID).Update("used", true)
+	otpUpdateResult := mc.DB.WithContext(dbTimeoutCtx).Model(&models.MasterOtp{}).Where("master_otp_id = ?", otp.MasterOtpID).Update("used", true)
 	if otpUpdateResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, otpUpdateResult.Error.Error())
 		return
@@ -278,8 +278,8 @@ func (mc *masterController) OtpCheck(ctx *gin.Context) {
 }
 
 func (mc *masterController) ReissueVerificationCode(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	var payload dtos.MasterSignUpInput
 
 	// try to bind the request body tot he payload struct
@@ -290,7 +290,7 @@ func (mc *masterController) ReissueVerificationCode(ctx *gin.Context) {
 
 	// find the master in database
 	master := models.Master{}
-	masterResult := mc.DB.WithContext(requestTimeoutCtx).Where("email = ?", payload.Email).First(&master)
+	masterResult := mc.DB.WithContext(dbTimeoutCtx).Where("email = ?", payload.Email).First(&master)
 	// check for error
 	if masterResult.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusForbidden, "Invalid Email or password")
@@ -315,7 +315,7 @@ func (mc *masterController) ReissueVerificationCode(ctx *gin.Context) {
 	fmt.Println(newVerificationCode)
 
 	// Update verification code of the master
-	vcResult := mc.DB.WithContext(requestTimeoutCtx).Model(&models.VerificationCode{}).Where("master_id = ?", master.MasterID).Update("code", newVerificationCode)
+	vcResult := mc.DB.WithContext(dbTimeoutCtx).Model(&models.VerificationCode{}).Where("master_id = ?", master.MasterID).Update("code", newVerificationCode)
 	if vcResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, vcResult.Error.Error())
 		return
@@ -335,8 +335,8 @@ func (mc *masterController) ReissueVerificationCode(ctx *gin.Context) {
 }
 
 func (mc *masterController) RefreshAccessToken(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	refreshToken := utils.GetToken(ctx, "refresh_token", "x-refresh-token")
 
 	// if there's no token from header or cookie
@@ -354,7 +354,7 @@ func (mc *masterController) RefreshAccessToken(ctx *gin.Context) {
 
 	// find the user that has the refresh token
 	var master models.Master
-	result := mc.DB.WithContext(requestTimeoutCtx).Where("master_id = ?", sub["master_id"]).First(&master)
+	result := mc.DB.WithContext(dbTimeoutCtx).Where("master_id = ?", sub["master_id"]).First(&master)
 	if result.Error != nil {
 		switch result.Error.Error() {
 		case "record not found":
@@ -400,8 +400,8 @@ func (mc *masterController) LogOut(ctx *gin.Context) {
 }
 
 func (mc *masterController) VerifyEmail(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	code := ctx.Query("verification_code")
 
 	fmt.Println(code)
@@ -413,7 +413,7 @@ func (mc *masterController) VerifyEmail(ctx *gin.Context) {
 
 	// Verify the verification code
 	verificationCode := models.VerificationCode{}
-	vcResult := mc.DB.WithContext(requestTimeoutCtx).Where("code = ? AND used = ?", code, false).First(&verificationCode)
+	vcResult := mc.DB.WithContext(dbTimeoutCtx).Where("code = ? AND used = ?", code, false).First(&verificationCode)
 	if vcResult.Error == gorm.ErrRecordNotFound {
 		dtos.RespondWithError(ctx, http.StatusNotFound, "Invalid verification code")
 		return
@@ -429,13 +429,13 @@ func (mc *masterController) VerifyEmail(ctx *gin.Context) {
 	}
 
 	// update the master data on database
-	masterUpdateResult := mc.DB.WithContext(requestTimeoutCtx).Model(&models.Master{}).Where("master_id = ?", verificationCode.MasterID).Update("verified", true)
+	masterUpdateResult := mc.DB.WithContext(dbTimeoutCtx).Model(&models.Master{}).Where("master_id = ?", verificationCode.MasterID).Update("verified", true)
 	if masterUpdateResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, masterUpdateResult.Error.Error())
 		return
 	}
 
-	vcUpdateResult := mc.DB.WithContext(requestTimeoutCtx).Model(&models.VerificationCode{}).Where("verification_code_id = ?", verificationCode.VerificationCodeID).Update("used", true)
+	vcUpdateResult := mc.DB.WithContext(dbTimeoutCtx).Model(&models.VerificationCode{}).Where("verification_code_id = ?", verificationCode.VerificationCodeID).Update("used", true)
 	if vcUpdateResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, vcUpdateResult.Error.Error())
 		return
@@ -452,8 +452,7 @@ func (mc *masterController) Profile(ctx *gin.Context) {
 }
 
 func (mc *masterController) GenerateInvitationCode(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
 	currentMaster := ctx.MustGet("currentMaster").(models.Master)
 	fmt.Println(currentMaster)
@@ -467,7 +466,7 @@ func (mc *masterController) GenerateInvitationCode(ctx *gin.Context) {
 		CreatedAt:  now,
 	}
 
-	invitationResult := mc.DB.WithContext(requestTimeoutCtx).Create(&newInvitation)
+	invitationResult := mc.DB.WithContext(dbTimeoutCtx).Create(&newInvitation)
 	if invitationResult.Error != nil {
 		dtos.RespondWithError(ctx, http.StatusInternalServerError, invitationResult.Error.Error())
 		return

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/HudYuSa/mydeen/db/models"
 	"github.com/HudYuSa/mydeen/internal/config"
@@ -30,8 +29,8 @@ func NewCommonController(db *gorm.DB) CommonController {
 }
 
 func (cc *commonController) CheckRole(ctx *gin.Context) {
-	requestTimeoutCtx, cancel := context.WithTimeout(context.TODO(), time.Duration(config.GlobalConfig.DatabaseTimeout)*time.Millisecond)
-	defer cancel()
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
 	refreshToken := utils.GetToken(ctx, "refresh_token", "x-refresh-token")
 	// if there's no token from header or cookie and
 	if reflect.ValueOf(refreshToken).IsZero() {
@@ -55,7 +54,7 @@ func (cc *commonController) CheckRole(ctx *gin.Context) {
 			// find the master
 			master := models.Master{}
 
-			result := cc.DB.WithContext(requestTimeoutCtx).Where("master_id = ?", sub["master_id"]).First(&master)
+			result := cc.DB.WithContext(dbTimeoutCtx).Where("master_id = ?", sub["master_id"]).First(&master)
 			if result.Error != nil {
 				dtos.RespondWithError(ctx, http.StatusNotFound, "the user belonging to this token doesn't exist anymore")
 				return
@@ -67,7 +66,7 @@ func (cc *commonController) CheckRole(ctx *gin.Context) {
 			// find the admin
 			admin := models.Admin{}
 
-			result := cc.DB.WithContext(requestTimeoutCtx).Where("admin_id = ?", sub["admin_id"]).First(&admin)
+			result := cc.DB.WithContext(dbTimeoutCtx).Where("admin_id = ?", sub["admin_id"]).First(&admin)
 			if result.Error != nil {
 				dtos.RespondWithError(ctx, http.StatusNotFound, "the user belonging to this token doesn't exist anymore")
 				return
