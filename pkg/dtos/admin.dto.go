@@ -40,7 +40,7 @@ type UpdateAdminUsername struct {
 }
 
 type UpdateAdminEmail struct {
-	Email string `json:"username" binding:"required"`
+	Email string `json:"email" binding:"required,email"`
 }
 
 func GenerateAdminResponse(admin *models.Admin) *AdminResponse {

@@ -185,11 +185,51 @@ func (ac *adminController) OtpCheck(ctx *gin.Context) {
 }
 
 func (ac *adminController) UpdateUsername(ctx *gin.Context) {
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
 
+	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
+
+	var payload dtos.UpdateAdminUsername
+
+	// try to bind the reauest body to the payload struct
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	fmt.Println(payload)
+
+	UpdateUsernameResult := ac.DB.WithContext(dbTimeoutCtx).Model(&currentAdmin).Where("admin_id = ?", currentAdmin.AdminID).Update("username", payload.Username)
+	if UpdateUsernameResult.Error != nil {
+		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateUsernameResult.Error.Error())
+		return
+	}
+
+	dtos.RespondWithJson(ctx, http.StatusOK, dtos.GenerateAdminResponse(&currentAdmin))
 }
 
 func (ac *adminController) UpdateEmail(ctx *gin.Context) {
-	panic("not implemented") // TODO: Implement
+	dbTimeoutCtx := ctx.MustGet("dbTimeoutContext").(context.Context)
+
+	currentAdmin := ctx.MustGet("currentAdmin").(models.Admin)
+
+	var payload dtos.UpdateAdminEmail
+
+	// try to bind the reauest body to the payload struct
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		dtos.RespondWithError(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	fmt.Println(payload)
+
+	UpdateUsernameResult := ac.DB.WithContext(dbTimeoutCtx).Model(&currentAdmin).Where("admin_id = ?", currentAdmin.AdminID).Update("email", payload.Email)
+	if UpdateUsernameResult.Error != nil {
+		dtos.RespondWithError(ctx, http.StatusInternalServerError, UpdateUsernameResult.Error.Error())
+		return
+	}
+
+	dtos.RespondWithJson(ctx, http.StatusOK, dtos.GenerateAdminResponse(&currentAdmin))
 }
 
 func (ac *adminController) UpdatePassword(ctx *gin.Context) {

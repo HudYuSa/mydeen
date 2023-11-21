@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/HudYuSa/mydeen/pkg/controllers"
+	"github.com/HudYuSa/mydeen/pkg/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,4 +28,8 @@ func (ar *adminRoutes) SetupRoutes(rg *gin.RouterGroup) {
 	router.POST("/otp", ar.AdminController.OtpCheck)
 	router.GET("/refresh", ar.AdminController.RefreshAccessToken)
 	router.GET("/logout", ar.AdminController.LogOut)
+
+	router.Use(middlewares.AuthenticateAdmin())
+	router.PATCH("/edit/username", ar.AdminController.UpdateUsername)
+	router.PATCH("/edit/email", ar.AdminController.UpdateEmail)
 }
