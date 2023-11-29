@@ -14,6 +14,7 @@ type Question struct {
 	Starred    bool      `gorm:"not null"`
 	Approved   bool      `gorm:"not null"`
 	Answered   bool      `gorm:"not null"`
+	Likes      int       `gorm:"not null"`
 	CreatedAt  time.Time `gorm:"not null"`
 	UpdatedAt  time.Time `gorm:"not null"`
 	Event      Event     `gorm:"foreignKey:EventID;references:EventID"`

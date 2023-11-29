@@ -173,6 +173,7 @@ func (ac *adminController) SignIn(ctx *gin.Context) {
 	// max age time 60 so it become minute
 	// set samesite to none
 	fmt.Println(domain)
+	ctx.SetSameSite(http.SameSiteNoneMode)
 	ctx.SetCookie("access_token", accessToken, config.GlobalConfig.AccessTokenMaxAge*60, "/", domain, true, true)
 	ctx.SetCookie("refresh_token", refreshToken, config.GlobalConfig.RefreshTokenMaxAge*60, "/", domain, true, true)
 
@@ -287,7 +288,8 @@ func (ac *adminController) RefreshAccessToken(ctx *gin.Context) {
 	fmt.Println(domain)
 
 	// set new accesstoken cookie
-	ctx.SetCookie("access_token", accessToken, config.GlobalConfig.AccessTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetSameSite(http.SameSiteNoneMode)
+	ctx.SetCookie("access_token", accessToken, config.GlobalConfig.AccessTokenMaxAge*60, "/", "localhost", true, true)
 
 	dtos.RespondWithJson(ctx, http.StatusOK, gin.H{
 		"access_token": accessToken,
@@ -295,8 +297,20 @@ func (ac *adminController) RefreshAccessToken(ctx *gin.Context) {
 }
 
 func (ac *adminController) LogOut(ctx *gin.Context) {
-	ctx.SetCookie("access_token", "", -1, "/", "localhost", false, true)
-	ctx.SetCookie("refresh_token", "", -1, "/", "localhost", false, true)
+	// Get the client's request host
+	host := ctx.Request.Host
+
+	// Extract the domain from the request host
+	parts := strings.Split(host, ":")
+	domain := parts[0]
+
+	// set accesstoken and refresh token to client cookie
+	// max age time 60 so it become minute
+	// set samesite to none
+	fmt.Println(domain)
+	ctx.SetSameSite(http.SameSiteNoneMode)
+	ctx.SetCookie("access_token", "", -1, "/", domain, true, true)
+	ctx.SetCookie("refresh_token", "", -1, "/", domain, true, true)
 
 	dtos.RespondWithJson(ctx, http.StatusOK, "successfully logout user")
 }

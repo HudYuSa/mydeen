@@ -123,9 +123,19 @@ CREATE TABLE
         "starred" BOOLEAN,
         "approved" BOOLEAN,
         "answered" BOOLEAN,
+        "likes" INT DEFAULT 0,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "question_pkey" PRIMARY KEY ("question_id"),
         CONSTRAINT "fk_event" FOREIGN KEY("event_id") REFERENCES "events"("event_id") ON DELETE CASCADE,
         CONSTRAINT "fk_user" FOREIGN KEY("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE
+    );
+
+CREATE TABLE
+    IF NOT EXISTS "likes"(
+        "like_id" UUID NOT NULL DEFAULT (uuid_generate_v4()),
+        "user_id" UUID NOT NULL,
+        "question_id" UUID NOT NULL,
+        CONSTRAINT "like_pkey" PRIMARY KEY ("like_id"),
+        CONSTRAINT "fk_user" FOREIGN KEY("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE CONSTRAINT "fk_question" FOREIGN KEY("question_id") REFERENCES "questions"("question_id") ON DELETE CASCADE
     );
